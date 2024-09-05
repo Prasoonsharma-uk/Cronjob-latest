@@ -1,0 +1,11 @@
+releaseName: cronjob-v2
+
+namespace: cronjob-v2
+schedule: "*/10 * * * *"
+image:
+  repository: prasoonshrama25/k8s-deployment-dockerimage
+  tag: "latest"
+outputPath: "logs/version2"
+persistentVolumeClaim:
+  name: cronjob-app-pvc
+
