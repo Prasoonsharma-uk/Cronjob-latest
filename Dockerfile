@@ -5,7 +5,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy the Python script to the container
-COPY generate_file.py /app/generate_file.py
+COPY script/generate_file.py /app/generate_file.py
 
 # Set proper permissions for the Python script
 RUN chmod +x /app/generate_file.py
