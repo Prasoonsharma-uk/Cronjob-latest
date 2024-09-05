@@ -59,13 +59,28 @@ pipeline {
             }
         }
         
-        stage('Deploy CronJob v1') {
+        stage('Check and Deploy CronJob v1') {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         bat '''
-                            echo Creating namespace cronjob-v1 if it does not exist...
-                            kubectl create namespace cronjob-v1 --dry-run=client -o yaml | kubectl apply -f -
+                            :: Check if namespace exists
+                            kubectl get namespace cronjob-v1 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo Creating namespace cronjob-v1...
+                                kubectl create namespace cronjob-v1
+                            ) else (
+                                echo Namespace cronjob-v1 already exists.
+                            )
+                            
+                            :: Check if PVC exists
+                            kubectl get pvc cronjob-app-pvc --namespace=cronjob-v1 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo PVC does not exist. Creating PVC...
+                                kubectl apply -f ./helm/cronjob-multi-version/pvc.yaml --namespace cronjob-v1
+                            ) else (
+                                echo PVC cronjob-app-pvc already exists.
+                            )
                             
                             echo Deploying CronJob v1 with force update...
                             helm upgrade --install cronjob-v1 ./helm/cronjob-multi-version --namespace cronjob-v1 --values ./helm/cronjob-multi-version/values-v1.yaml --force
@@ -75,13 +90,28 @@ pipeline {
             }
         }
         
-        stage('Deploy CronJob v2') {
+        stage('Check and Deploy CronJob v2') {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         bat '''
-                            echo Creating namespace cronjob-v2 if it does not exist...
-                            kubectl create namespace cronjob-v2 --dry-run=client -o yaml | kubectl apply -f -
+                            :: Check if namespace exists
+                            kubectl get namespace cronjob-v2 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo Creating namespace cronjob-v2...
+                                kubectl create namespace cronjob-v2
+                            ) else (
+                                echo Namespace cronjob-v2 already exists.
+                            )
+                            
+                            :: Check if PVC exists
+                            kubectl get pvc cronjob-app-pvc --namespace=cronjob-v2 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo PVC does not exist. Creating PVC...
+                                kubectl apply -f ./helm/cronjob-multi-version/pvc.yaml --namespace cronjob-v2
+                            ) else (
+                                echo PVC cronjob-app-pvc already exists.
+                            )
                             
                             echo Deploying CronJob v2 with force update...
                             helm upgrade --install cronjob-v2 ./helm/cronjob-multi-version --namespace cronjob-v2 --values ./helm/cronjob-multi-version/values-v2.yaml --force
