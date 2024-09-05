@@ -1,4 +1,4 @@
-releaseName: cronjob-v1
+releaseName: cronjob-v4
 
 namespace: cronjob-v1
 schedule: "*/5 * * * *"
