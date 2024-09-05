@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  # Ensure storageClassName is not set if you don't want it to change
+ 
