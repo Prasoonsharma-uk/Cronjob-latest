@@ -64,6 +64,9 @@ pipeline {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         bat '''
+                            echo Creating namespace cronjob-v4 if it does not exist...
+                            kubectl create namespace cronjob-v4 --dry-run=client -o yaml | kubectl apply -f -
+
                             echo Deploying CronJob v1...
                             helm upgrade --install cronjob-v4 ./helm/cronjob-multi-version --namespace cronjob-v4 --values ./helm/cronjob-multi-version/values-v1.yaml
                         '''
@@ -76,10 +79,13 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
-                        bat """
+                        bat '''
+                            echo Creating namespace cronjob-v5 if it does not exist...
+                            kubectl create namespace cronjob-v5 --dry-run=client -o yaml | kubectl apply -f -
+
                             echo Deploying CronJob v2...
                             helm upgrade --install cronjob-v5 ./helm/cronjob-multi-version --namespace cronjob-v5 --values ./helm/cronjob-multi-version/values-v2.yaml
-                        """
+                        '''
                     }
                 }
             }
