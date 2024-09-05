@@ -16,11 +16,4 @@ spec:
           containers:
           - name: {{ .Values.releaseName }}
             image: {{ $.Values.image.repository }}:{{ $.Values.image.tag }}
-            volumeMounts:
-            - name: output-volume
-              mountPath: /output
           restartPolicy: OnFailure
-          volumes:
-          - name: output-volume
-            persistentVolumeClaim:
-              claimName: {{ $.Values.persistentVolumeClaim.name }}
