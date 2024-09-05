@@ -11,7 +11,7 @@ COPY script/generate_file.py /app/generate_file.py
 RUN apt-get update && apt-get install -y cron
 
 # Add the cron job
-RUN echo "* * * * * python /app/generate_file.py && cp /app/timestamped_file.txt /app/copied_file.txt" > /etc/cron.d/my-cron-job
+RUN echo "* * * * * python /app/generate_file.py && cp /app/timestamped_file.txt /app/copied_file.txt >> /var/log/cron.log 2>&1" > /etc/cron.d/my-cron-job
 
 # Give execution rights on the cron job
 RUN chmod 0644 /etc/cron.d/my-cron-job
@@ -23,4 +23,4 @@ RUN crontab /etc/cron.d/my-cron-job
 RUN touch /var/log/cron.log
 
 # Run the command on container startup
-CMD cron && tail -f /var/log/cron.log
+CMD cron -f && tail -f /var/log/cron.log
