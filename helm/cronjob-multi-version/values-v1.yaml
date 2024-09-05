@@ -3,7 +3,7 @@ releaseName: cronjob-v4
 namespace: cronjob-v4
 schedule: "*/5 * * * *"
 image:
-  repository: prasoonshrama25/k8s-deployment-dockerimage
+  repository: prasoonshrama25/cronjob-app
   tag: "latest"
 outputPath: "logs/version1"
 persistentVolumeClaim:
