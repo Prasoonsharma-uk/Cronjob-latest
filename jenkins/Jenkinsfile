@@ -59,7 +59,7 @@ pipeline {
             }
         }
         
-        stage('Deploy CronJob v1') {
+        stage('Create Namespace v1') {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
@@ -67,11 +67,40 @@ pipeline {
                             echo Creating namespace cronjob-v1 if it does not exist...
                             kubectl create namespace cronjob-v1 --dry-run=client -o yaml | kubectl apply -f -
 
+                            echo Waiting for namespace cronjob-v1 to be available...
+                            timeout /t 10
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy CronJob v1') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig']) {
+                        bat '''
                             echo Cleaning up existing cronjob-v1 resources...
                             kubectl delete cronjob cronjob-v1 -n cronjob-v1 --ignore-not-found=true
                             
                             echo Deploying CronJob v1 with force update...
-                            helm upgrade --install cronjob-v1 ./helm/cronjob-multi-version --namespace cronjob-v1 --values ./helm/cronjob-multi-version/values-v1.yaml --force
+                            helm upgrade --install cronjob-v1 ./helm/cronjob-multi-version --namespace cronjob-v1 --values ./helm/cronjob-multi-version/values-v1.yaml
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Create Namespace v2') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig']) {
+                        bat '''
+                            echo Creating namespace cronjob-v2 if it does not exist...
+                            kubectl create namespace cronjob-v2 --dry-run=client -o yaml | kubectl apply -f -
+
+                            echo Waiting for namespace cronjob-v2 to be available...
+                            timeout /t 10
                         '''
                     }
                 }
@@ -83,14 +112,11 @@ pipeline {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         bat '''
-                            echo Creating namespace cronjob-v5 if it does not exist...
-                            kubectl create namespace cronjob-v5 --dry-run=client -o yaml | kubectl apply -f -
-
-                            echo Cleaning up existing cronjob-v5 resources...
-                            kubectl delete cronjob cronjob-v5 -n cronjob-v5 --ignore-not-found=true
+                            echo Cleaning up existing cronjob-v2 resources...
+                            kubectl delete cronjob cronjob-v5 -n cronjob-v2 --ignore-not-found=true
                             
                             echo Deploying CronJob v2 with force update...
-                            helm upgrade --install cronjob-v5 ./helm/cronjob-multi-version --namespace cronjob-v5 --values ./helm/cronjob-multi-version/values-v2.yaml --force
+                            helm upgrade --install cronjob-v2 ./helm/cronjob-multi-version --namespace cronjob-v2 --values ./helm/cronjob-multi-version/values-v2.yaml
                         '''
                     }
                 }
