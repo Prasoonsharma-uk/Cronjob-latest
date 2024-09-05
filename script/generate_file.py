@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import datetime
 
 # Generate a file with the current timestamp
