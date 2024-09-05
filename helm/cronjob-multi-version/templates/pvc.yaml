@@ -3,10 +3,14 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.persistentVolumeClaim.name }}
   namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-  storageClassName: standard  
+  {{- if .Values.createPersistentVolumeClaim }}
+  storageClassName: {{ .Values.storageClassName }}
+  {{- end }}
