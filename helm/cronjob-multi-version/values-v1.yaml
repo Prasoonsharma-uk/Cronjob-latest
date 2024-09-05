@@ -7,4 +7,4 @@ image:
   tag: "latest"
 outputPath: "logs/version1"
 persistentVolumeClaim:
-  name: cronjob-app-pvc
+  name: cronjob-app-pvc1
