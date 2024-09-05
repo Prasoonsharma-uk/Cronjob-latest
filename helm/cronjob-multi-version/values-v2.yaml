@@ -1,6 +1,6 @@
-releaseName: cronjob-v2
+releaseName: cronjob-v4
 
-namespace: cronjob-v2
+namespace: cronjob-v4
 schedule: "*/10 * * * *"
 image:
   repository: prasoonshrama25/k8s-deployment-dockerimage
