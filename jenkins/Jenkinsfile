@@ -69,6 +69,11 @@ pipeline {
                             kubectl annotate namespace cronjob-v1 meta.helm.sh/release-name=cronjob-v1 --overwrite
                             kubectl annotate namespace cronjob-v1 meta.helm.sh/release-namespace=cronjob-v1 --overwrite
                             kubectl label namespace cronjob-v1 app.kubernetes.io/managed-by=Helm --overwrite
+                            
+                            kubectl get namespace cronjob-v2 || kubectl create namespace cronjob-v2
+                            kubectl annotate namespace cronjob-v2 meta.helm.sh/release-name=cronjob-v2 --overwrite
+                            kubectl annotate namespace cronjob-v2 meta.helm.sh/release-namespace=cronjob-v2 --overwrite
+                            kubectl label namespace cronjob-v2 app.kubernetes.io/managed-by=Helm --overwrite
                         '''
                     }
                 }
