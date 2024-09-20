@@ -8,7 +8,7 @@ pipeline {
     environment {
         REGISTRY = 'prasoonshrama25'
         IMAGE = 'cronjob-app'
-        TAG = "${params.VERSION}" // Use the version parameter for tagging
+        TAG = "${params.VERSION}"
         DOCKER_CREDENTIALS_ID = 'docker-credentials-id'
         KUBE_CONFIG = credentials('kubeconfig')
     }
@@ -19,20 +19,10 @@ pipeline {
                 script {
                     bat '''
                         echo Installing Helm...
-
-                        :: Download Helm installation script
                         curl -fsSL -o get_helm.bat https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-
-                        :: Make the script executable
                         chmod 700 get_helm.bat
-
-                        :: Run the script to install Helm
                         get_helm.bat
-
-                        :: Clean up the installation script
                         del get_helm.bat
-
-                        :: Verify Helm installation
                         helm version
                     '''
                 }
@@ -42,7 +32,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build Docker image with the specified version
                     bat "docker build -t ${REGISTRY}/${IMAGE}:${params.VERSION} -f Dockerfile ."
                 }
             }
@@ -51,9 +40,22 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Push Docker image to the registry with the specified tag
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
                         bat "docker push ${REGISTRY}/${IMAGE}:${params.VERSION}"
+                    }
+                }
+            }
+        }
+
+        stage('Cleanup Existing Release and Namespace') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig']) {
+                        bat '''
+                            echo Cleaning up existing releases...
+                            helm uninstall cronjob-v2 --namespace cronjob-v2 || echo "No release to uninstall"
+                            kubectl delete namespace cronjob-v2 --ignore-not-found=true
+                        '''
                     }
                 }
             }
@@ -66,14 +68,6 @@ pipeline {
                         bat '''
                             echo Managing namespace...
                             kubectl get namespace cronjob-v1 || kubectl create namespace cronjob-v1
-                            kubectl annotate namespace cronjob-v1 meta.helm.sh/release-name=cronjob-v1 --overwrite
-                            kubectl annotate namespace cronjob-v1 meta.helm.sh/release-namespace=cronjob-v1 --overwrite
-                            kubectl label namespace cronjob-v1 app.kubernetes.io/managed-by=Helm --overwrite
-                            
-                            kubectl get namespace cronjob-v2 || kubectl create namespace cronjob-v2
-                            kubectl annotate namespace cronjob-v2 meta.helm.sh/release-name=cronjob-v2 --overwrite
-                            kubectl annotate namespace cronjob-v2 meta.helm.sh/release-namespace=cronjob-v2 --overwrite
-                            kubectl label namespace cronjob-v2 app.kubernetes.io/managed-by=Helm --overwrite
                         '''
                     }
                 }
