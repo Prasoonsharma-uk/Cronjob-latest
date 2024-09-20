@@ -59,14 +59,16 @@ pipeline {
             }
         }
         
-        stage('Create Namespaces') {
+        stage('Manage Namespace') {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         bat '''
-                            echo Creating namespaces if not already present...
+                            echo Managing namespace...
                             kubectl get namespace cronjob-v1 || kubectl create namespace cronjob-v1
-                            kubectl get namespace cronjob-v2 || kubectl create namespace cronjob-v2
+                            kubectl annotate namespace cronjob-v1 meta.helm.sh/release-name=cronjob-v1 --overwrite
+                            kubectl annotate namespace cronjob-v1 meta.helm.sh/release-namespace=cronjob-v1 --overwrite
+                            kubectl label namespace cronjob-v1 app.kubernetes.io/managed-by=Helm --overwrite
                         '''
                     }
                 }
