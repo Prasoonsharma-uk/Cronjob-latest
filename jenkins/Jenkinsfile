@@ -7,8 +7,8 @@ pipeline {
     
     environment {
         REGISTRY = 'prasoonshrama25'
-        IMAGE = 'cronjob-app'
-        TAG = "${params.VERSION}"
+        IMAGE = 'k8s-deployment-dockerimage'
+        TAG = "${params.VERSION}" // Use the version parameter for tagging
         DOCKER_CREDENTIALS_ID = 'docker-credentials-id'
         KUBE_CONFIG = credentials('kubeconfig')
     }
@@ -19,10 +19,20 @@ pipeline {
                 script {
                     bat '''
                         echo Installing Helm...
+
+                        :: Download Helm installation script
                         curl -fsSL -o get_helm.bat https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+
+                        :: Make the script executable
                         chmod 700 get_helm.bat
+
+                        :: Run the script to install Helm
                         get_helm.bat
+
+                        :: Clean up the installation script
                         del get_helm.bat
+
+                        :: Verify Helm installation
                         helm version
                     '''
                 }
@@ -32,6 +42,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build Docker image with the specified version
                     bat "docker build -t ${REGISTRY}/${IMAGE}:${params.VERSION} -f Dockerfile ."
                 }
             }
@@ -40,60 +51,70 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
+                    // Push Docker image to the registry with the specified tag
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
                         bat "docker push ${REGISTRY}/${IMAGE}:${params.VERSION}"
                     }
                 }
             }
         }
-
-        stage('Cleanup Existing Release and Namespace') {
+        
+        stage('Check and Deploy CronJob v1') {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         bat '''
-                            echo Cleaning up existing releases...
-                            helm uninstall cronjob-v2 --namespace cronjob-v2 || echo "No release to uninstall"
-                            kubectl delete namespace cronjob-v2 --ignore-not-found=true
+                            :: Check if namespace exists
+                            kubectl get namespace cronjob-v1 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo Creating namespace cronjob-v1...
+                                kubectl create namespace cronjob-v1
+                            ) else (
+                                echo Namespace cronjob-v1 already exists.
+                            )
+                            
+                            :: Check if PVC exists
+                            kubectl get pvc cronjob-app-pvc --namespace=cronjob-v1 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo PVC does not exist. Creating PVC...
+                                kubectl apply -f ./helm/cronjob-multi-version/pvc.yaml --namespace cronjob-v1
+                            ) else (
+                                echo PVC cronjob-app-pvc already exists.
+                            )
+                            
+                            echo Deploying CronJob v1 with force update...
+                            helm upgrade --install cronjob-v1 ./helm/cronjob-multi-version --namespace cronjob-v1 --values ./helm/cronjob-multi-version/values-v1.yaml --force
                         '''
                     }
                 }
             }
         }
         
-        stage('Manage Namespace') {
+        stage('Check and Deploy CronJob v2') {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
                         bat '''
-                            echo Managing namespace...
-                            kubectl get namespace cronjob-v1 || kubectl create namespace cronjob-v1
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Deploy CronJob v1') {
-            steps {
-                script {
-                    withKubeConfig([credentialsId: 'kubeconfig']) {
-                        bat '''
-                            echo Deploying CronJob v1...
-                            helm upgrade --install cronjob-v1 ./helm/cronjob-multi-version --namespace cronjob-v1 --values ./helm/cronjob-multi-version/values-v1.yaml
-                        '''
-                    }
-                }
-            }
-        }
-        
-        stage('Deploy CronJob v2') {
-            steps {
-                script {
-                    withKubeConfig([credentialsId: 'kubeconfig']) {
-                        bat '''
-                            echo Deploying CronJob v2...
-                            helm upgrade --install cronjob-v2 ./helm/cronjob-multi-version --namespace cronjob-v2 --values ./helm/cronjob-multi-version/values-v2.yaml
+                            :: Check if namespace exists
+                            kubectl get namespace cronjob-v2 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo Creating namespace cronjob-v2...
+                                kubectl create namespace cronjob-v2
+                            ) else (
+                                echo Namespace cronjob-v2 already exists.
+                            )
+                            
+                            :: Check if PVC exists
+                            kubectl get pvc cronjob-app-pvc --namespace=cronjob-v2 >nul 2>&1
+                            if %ERRORLEVEL% NEQ 0 (
+                                echo PVC does not exist. Creating PVC...
+                                kubectl apply -f ./helm/cronjob-multi-version/pvc.yaml --namespace cronjob-v2
+                            ) else (
+                                echo PVC cronjob-app-pvc already exists.
+                            )
+                            
+                            echo Deploying CronJob v2 with force update...
+                            helm upgrade --install cronjob-v2 ./helm/cronjob-multi-version --namespace cronjob-v2 --values ./helm/cronjob-multi-version/values-v2.yaml --force
                         '''
                     }
                 }
