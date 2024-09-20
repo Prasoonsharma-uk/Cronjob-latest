@@ -76,10 +76,23 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
-                        bat """
+                        bat '''
                             echo Deploying CronJob v2...
-                            helm upgrade --install cronjob-v2 ./helm/cronjob-multi-version --namespace cronjob-v1 --values ./helm/cronjob-multi-version/values-v2.yaml
-                        """
+                            helm upgrade --install cronjob-v2 ./helm/cronjob-multi-version --namespace cronjob-v2 --values ./helm/cronjob-multi-version/values-v2.yaml
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy CronJob v3') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig']) {
+                        bat '''
+                            echo Deploying CronJob v3...
+                            helm upgrade --install cronjob-v3 ./helm/cronjob-multi-version --namespace cronjob-v3 --values ./helm/cronjob-multi-version/values-v3.yaml
+                        '''
                     }
                 }
             }
