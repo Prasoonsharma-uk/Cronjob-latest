@@ -59,6 +59,20 @@ pipeline {
             }
         }
         
+        stage('Create Namespaces') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'kubeconfig']) {
+                        bat '''
+                            echo Creating namespaces if not already present...
+                            kubectl get namespace cronjob1 || kubectl create namespace cronjob1
+                            kubectl get namespace cronjob2 || kubectl create namespace cronjob2
+                        '''
+                    }
+                }
+            }
+        }
+        
         stage('Deploy CronJob v1') {
             steps {
                 script {
@@ -76,10 +90,10 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'kubeconfig']) {
-                        bat """
+                        bat '''
                             echo Deploying CronJob v2...
                             helm upgrade --install cronjob-v2 ./helm/cronjob-multi-version --namespace cronjob2 --values ./helm/cronjob-multi-version/values-v2.yaml
-                        """
+                        '''
                     }
                 }
             }
