@@ -58,6 +58,20 @@ pipeline {
                 }
             }
         }
+
+        // Ensure that the namespaces are created before Helm deployment
+        stage('Create Namespaces') {
+            steps {
+                script {
+                    bat '''
+                        echo Creating namespaces if not already present...
+                        kubectl get namespace cronjob-v1 || kubectl create namespace cronjob-v1
+                        kubectl get namespace cronjob-v2 || kubectl create namespace cronjob-v2
+                        kubectl get namespace cronjob-v3 || kubectl create namespace cronjob-v3
+                    '''
+                }
+            }
+        }
         
         stage('Deploy CronJob v1') {
             steps {
